@@ -9,6 +9,13 @@ def fetch_and_format_vpn_data(session):
             vpn_connection.get("VpnConnectionId", "")
             vpn_state = vpn_connection.get("State", "")
             vpn_cgi = vpn_connection.get("CustomerGatewayId", "")
+            vpn_gw_id = vpn_connection.get("VpnGatewayId","")
+            # Find VPC ID
+            if vpn_gw_id != "":
+                vgw_response = vpn_client.describe_vpn_gateways(VpnGatewayIds=[vpn_gw_id])
+                for vgw in vgw_response.get("VpnGateways"):
+                    vgw_vpc = vgw.get("VpcAttachments", "")[0].get("VpcId", "")
+
             vpn_name = [
                 tag.get("Value")
                 for tag in vpn_connection.get("Tags", "")
@@ -44,10 +51,6 @@ def fetch_and_format_vpn_data(session):
                 .strip()
             )
             vpn_virtual_gw = vpn_connection.get("VpnGatewayId", "")
-            vgw_response = vpn_client.describe_vpn_gateways(VpnGatewayIds=[vpn_id])
-
-            for vgw in vgw_response.get("VpnGateways"):
-                vgw_vpc = vgw.get("VpcAttachments", "")[0].get("VpcId", "")
 
             # create dictionary
             vpn_data["Name"] = vpn_name
