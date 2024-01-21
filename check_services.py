@@ -13,7 +13,7 @@ import pandas as pd
 
 
 def scan_services(profile, region):
-    services = ["ec2", "s3", "rds", "lambda", "dynamodb", "apigateway"]
+    services = ["ec2", "s3", "rds","cloudfront", "lambda", "dynamodb", "apigateway"]
     session = boto3.Session(profile_name=profile, region_name=region)
 
     # Default Data (VPC, Subnet, NGW, IGW, VPN, VPC Peering, DX)
@@ -37,8 +37,8 @@ def scan_services(profile, region):
             rds_data = fetch_and_format_rds_data(client)
         elif service_name == "s3":
             s3_data = fetch_and_format_s3_data(client)
-        elif service_name == "cf":
-            cf_data = fetch_and_format_cf_data(session)
+        elif service_name == "cloudfront":
+            cf_data = fetch_and_format_cf_data(client)
 
     vpc_df = pd.DataFrame(vpc_data)
     subnet_df = pd.DataFrame(subnet_data)
@@ -49,6 +49,7 @@ def scan_services(profile, region):
     ec2_df = pd.DataFrame(ec2_data)
     rds_df = pd.DataFrame(rds_data)
     s3_df = pd.DataFrame(s3_data)
+    cf_df = pd.DataFrame(cf_data)
 
     with pd.ExcelWriter(
         "aws_resource_" + region + "_" + profile + ".xlsx", engine="xlsxwriter"
@@ -81,6 +82,7 @@ def scan_services(profile, region):
         rds_df.to_excel(writer, sheet_name="RDS Resources", index=False)
         s3_df.to_excel(writer, sheet_name="S3 Resources", index=False)
         # lb_df.to_excel(writer, sheet_name="Load Balancers", index=False)
+        cf_df.to_excel(writer, sheet_name="CloudFront Resources", index=False)
 
 
 selected_profile = get_profile()

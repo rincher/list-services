@@ -11,6 +11,7 @@ def fetch_and_format_vpn_data(session):
             vpn_cgi = vpn_connection.get("CustomerGatewayId", "")
             vpn_gw_id = vpn_connection.get("VpnGatewayId","")
             # Find VPC ID
+            vgw_vpc = ""
             if vpn_gw_id != "":
                 vgw_response = vpn_client.describe_vpn_gateways(VpnGatewayIds=[vpn_gw_id])
                 for vgw in vgw_response.get("VpnGateways"):
