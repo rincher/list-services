@@ -8,12 +8,14 @@ from subnet_resources import fetch_and_format_subnet_data
 from nat_resources import fetch_and_format_nat_data
 from vpn_resources import fetch_and_format_vpn_data
 from cf_resources import fetch_and_format_cf_data
+from route_resources import fetch_and_format_route_data
+
 # from lb_resources import fetch_and_format_lb_data
 import pandas as pd
 
 
 def scan_services(profile, region):
-    services = ["ec2", "s3", "rds","cloudfront", "lambda", "dynamodb", "apigateway"]
+    services = ["ec2", "s3", "rds", "cloudfront", "lambda", "dynamodb", "apigateway"]
     session = boto3.Session(profile_name=profile, region_name=region)
 
     # Default Data (VPC, Subnet, NGW, IGW, VPN, VPC Peering, DX)
@@ -25,6 +27,7 @@ def scan_services(profile, region):
     nat_data = fetch_and_format_nat_data(session)
     # VPN
     vpn_data = fetch_and_format_vpn_data(session)
+    route_data = fetch_and_format_route_data(session)
 
     # lb_data = fetch_and_format_lb_data(session)
 
@@ -45,6 +48,7 @@ def scan_services(profile, region):
     nat_df = pd.DataFrame(nat_data)
     vpn_df = pd.DataFrame(vpn_data)
     # lb_df = pd.DataFrame(lb_data)
+    route_df = pd.DataFrame(route_data)
 
     ec2_df = pd.DataFrame(ec2_data)
     rds_df = pd.DataFrame(rds_data)
