@@ -87,6 +87,7 @@ def scan_services(profile, region):
         s3_df.to_excel(writer, sheet_name="S3 Resources", index=False)
         # lb_df.to_excel(writer, sheet_name="Load Balancers", index=False)
         cf_df.to_excel(writer, sheet_name="CloudFront Resources", index=False)
+        route_df.to_excel(writer, sheet_name="Route Table", index=False)
 
 
 selected_profile = get_profile()
