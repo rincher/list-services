@@ -9,6 +9,8 @@ from nat_resources import fetch_and_format_nat_data
 from vpn_resources import fetch_and_format_vpn_data
 from cf_resources import fetch_and_format_cf_data
 from route_resources import fetch_and_format_route_data
+from role_resources import fetch_and_format_role_data
+from sg_resources import fetch_and_format_sg_data
 
 # from lb_resources import fetch_and_format_lb_data
 import pandas as pd
@@ -27,7 +29,12 @@ def scan_services(profile, region):
     nat_data = fetch_and_format_nat_data(session)
     # VPN
     vpn_data = fetch_and_format_vpn_data(session)
+    # RouteTable
     route_data = fetch_and_format_route_data(session)
+    # IAM Role
+    role_data = fetch_and_format_role_data(session)
+    # Security Group
+    sg_data = fetch_and_format_sg_data(session)
 
     # lb_data = fetch_and_format_lb_data(session)
 
@@ -49,6 +56,8 @@ def scan_services(profile, region):
     vpn_df = pd.DataFrame(vpn_data)
     # lb_df = pd.DataFrame(lb_data)
     route_df = pd.DataFrame(route_data)
+    role_df = pd.DataFrame(role_data)
+    sg_df = pd.DataFrame(sg_data).drop_duplicates("SecurityGroupId", ignore_index=True)
 
     ec2_df = pd.DataFrame(ec2_data)
     rds_df = pd.DataFrame(rds_data)
@@ -88,6 +97,8 @@ def scan_services(profile, region):
         # lb_df.to_excel(writer, sheet_name="Load Balancers", index=False)
         cf_df.to_excel(writer, sheet_name="CloudFront Resources", index=False)
         route_df.to_excel(writer, sheet_name="Route Table", index=False)
+        role_df.to_excel(writer, sheet_name="Role Statement", index=False)
+        sg_df.to_excel(writer, sheet_name="SG Summary", index=False)
 
 
 selected_profile = get_profile()
