@@ -29,12 +29,4 @@ def fetch_and_format_sg_data(session):
                         "NetworkInterfaceId": ni_id,
                     }
                 )
-        else:
-            expanded_data.append(
-                {
-                    "SecurityGroupId": sg_ids,
-                    "NetworkInterfaceId": ni_id,
-                }
-            )
-
     return expanded_data

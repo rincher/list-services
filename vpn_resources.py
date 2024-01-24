@@ -9,11 +9,13 @@ def fetch_and_format_vpn_data(session):
             vpn_connection.get("VpnConnectionId", "")
             vpn_state = vpn_connection.get("State", "")
             vpn_cgi = vpn_connection.get("CustomerGatewayId", "")
-            vpn_gw_id = vpn_connection.get("VpnGatewayId","")
+            vpn_gw_id = vpn_connection.get("VpnGatewayId", "")
             # Find VPC ID
             vgw_vpc = ""
             if vpn_gw_id != "":
-                vgw_response = vpn_client.describe_vpn_gateways(VpnGatewayIds=[vpn_gw_id])
+                vgw_response = vpn_client.describe_vpn_gateways(
+                    VpnGatewayIds=[vpn_gw_id]
+                )
                 for vgw in vgw_response.get("VpnGateways"):
                     vgw_vpc = vgw.get("VpcAttachments", "")[0].get("VpcId", "")
 
@@ -54,7 +56,7 @@ def fetch_and_format_vpn_data(session):
             vpn_virtual_gw = vpn_connection.get("VpnGatewayId", "")
 
             # create dictionary
-            vpn_data["Name"] = vpn_name
+            vpn_data["Name"] = ", ".join(vpn_name)
             vpn_data["VPN ID"] = vpn_id
             vpn_data["State"] = vpn_state
             vpn_data["Virtual Gateway"] = vpn_virtual_gw
@@ -69,7 +71,7 @@ def fetch_and_format_vpn_data(session):
             vpn_data["Acceleration Enabled"] = vpn_acceleration
             vpn_data["Authentication"] = "Pre-shared-key"
             vpn_data["Local IPV4 Network CIDR"] = vpn_localip
-            vpn_data["Remote IPV4 Netowrk CIDR"] = vpn_remoteip
+            vpn_data["Remote IPV4 Network CIDR"] = vpn_remoteip
             vpn_data["Gateway Association State"] = vpn_association
             vpn_data["Outside IP address type"] = vpn_outside
             vpn_data_set.append(vpn_data)

@@ -23,11 +23,11 @@ def fetch_and_format_subnet_data(session):
             ]
 
             subnet_data["SubnetId"] = subnet_id
-            subnet_data["Name"] = "".join(subnet_name)
+            subnet_data["Name"] = ", ".join(subnet_name)
             subnet_data["VPCId"] = subnet_vpc_id
             subnet_data["AZ"] = subnet_az
             subnet_data["CIDR"] = subnet_cidr
-            subnet_data["RouteTable"] = "".join(subnet_routetable)
+            subnet_data["RouteTable"] = ", ".join(subnet_routetable)
             subnet_data["Ipv6Native"] = subnet_ipv6
             subnet_data_set.append(subnet_data)
         return subnet_data_set

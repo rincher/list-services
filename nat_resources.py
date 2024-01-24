@@ -23,7 +23,7 @@ def fetch_and_format_nat_data(session):
             nat_private_ip = nat_gateway_address.get("PrivateIp")
             nat_public_ip = nat_gateway_address.get("PublicIp")
 
-        nat_data["Name"] = nat_name
+        nat_data["Name"] = ", ".join(nat_name)
         nat_data["NatGatewayId"] = nat_gateway_id
         nat_data["Connectivity"] = nat_connectivity
         nat_data["State"] = nat_status
