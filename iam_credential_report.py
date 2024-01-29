@@ -1,6 +1,6 @@
 import time
-import base64
-from datetime import datetime 
+from datetime import datetime, timezone
+
 
 def retrieve_credential_report(session):
     iam_client = session.client("iam")
@@ -18,14 +18,73 @@ def retrieve_credential_report(session):
     content = credential_report.get("Content")
     credential_data_set = []
     decoded_content = content.decode("utf-8")
-    header = decoded_content.split("\n")[0]
-    keys = header.split(",")
     rows = decoded_content.split("\n")[1:]
+    current_datetime = datetime.now(timezone.utc)
+
     for row in rows:
         values = row.split(",")
-        password_last_changed = values[5]
-        password_age = 
-        credential_data = dict(zip(keys, values))
-        credential_data_set.append(credential_data)
+        password_age = 0
+        access_key1_age = 0
+        access_key2_age = 0
+        credential_data = {}
 
-    print(decoded_content)
+        # check if password enabled
+        user = values[0]
+        password_enabled = values[3]
+        if password_enabled == "true":
+            password_last_changed = values[5]
+            password_diff = (
+                current_datetime - datetime.fromisoformat(password_last_changed)
+                if current_datetime > datetime.fromisoformat(password_last_changed)
+                else datetime.fromisoformat(password_last_changed) - current_datetime
+            )
+            password_age = password_diff.days
+
+        mfa_enabled = values[7]
+
+        # check if access_key1 enabled
+        access_key1_enabled = values[8]
+        if access_key1_enabled == "true":
+            access_key1_last_changed = values[9]
+            access_key1_diff = (
+                current_datetime - datetime.fromisoformat(access_key1_last_changed)
+                if current_datetime > datetime.fromisoformat(access_key1_last_changed)
+                else datetime.fromisoformat(access_key1_last_changed) - current_datetime
+            )
+            access_key1_age = access_key1_diff.days
+
+        access_key2_enabled = values[13]
+        if access_key2_enabled == "true":
+            access_key2_last_changed = values[14]
+            access_key2_diff = (
+                current_datetime - datetime.fromisoformat(access_key2_last_changed)
+                if current_datetime > datetime.fromisoformat(access_key2_last_changed)
+                else datetime.fromisoformat(access_key2_last_changed) - current_datetime
+            )
+            access_key2_age = access_key2_diff.days
+
+        if (
+            int(password_age) > 90
+            or int(access_key1_age) > 90
+            or int(access_key2_age) > 90
+        ):
+            credential_data["User"] = user
+            credential_data["MFA enabled"] = mfa_enabled
+            credential_data["Password enabled"] = password_enabled
+            if password_enabled == "false" and password_age == 0:
+                credential_data["Password last changed"] = "N/A"
+            else:
+                credential_data["Password last changed"] = str(password_age)
+            credential_data["Access key1 active"] = access_key1_enabled
+            if access_key1_enabled == "false" and access_key1_age == 0:
+                credential_data["Access key1 last changed"] = "N/A"
+            else:
+                credential_data["Access key1 last changed"] = str(access_key1_age)
+            credential_data["Access key2 active"] = access_key2_enabled
+            if access_key2_enabled == "false" and access_key2_age == 0:
+                credential_data["Access key2 last changed"] = "N/A"
+            else:
+                credential_data["Access key2 last changed"] = str(access_key2_age)
+            credential_data_set.append(credential_data)
+
+    return credential_data_set

@@ -30,9 +30,12 @@ def fetch_and_format_rds_data(client):
             for db_clusters in cluster_response.get("DBClusters"):
                 db_data["DBClusterPG"] = db_clusters.get("DBClusterParameterGroup")
 
+        db_data["DBInstanceIdentifier"] = db_instance_id
+        db_data["DBClusterIdentifer"] = db_cluster_id
         db_data["Size"] = db_type
         db_data["Engine"] = db_engine
         db_data["EngineVersion"] = db_engine_version
+        db_data["VPC"] = db_vpc
         db_data["MultiAZ"] = db_multiaz
         db_data["Region"] = db_az
         db_data["Status"] = db_status
@@ -40,11 +43,8 @@ def fetch_and_format_rds_data(client):
         db_data["Storage"] = db_storage
         db_data["MaintenanceEnable"] = db_maintenance
         db_data["DBInstancePG"] = db_instance_pg
-        db_data["VPC"] = db_vpc
         db_data["DBSubnetGroup"] = db_subnet_group
         db_data["OptionGroup"] = db_option_group
-        db_data["DBClusterIdentifer"] = db_cluster_id
-        db_data["DBInstanceIdentifier"] = db_instance_id
 
         db_data_set.append(db_data)
     return db_data_set

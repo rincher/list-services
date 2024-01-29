@@ -39,6 +39,7 @@ def scan_services(profile, region):
     # Security Group
     sg_data = fetch_and_format_sg_data(session)
 
+    # IAM Credential Report
     credential_data = retrieve_credential_report(session)
 
     # lb_data = fetch_and_format_lb_data(session)
@@ -65,6 +66,7 @@ def scan_services(profile, region):
     route_df = pd.DataFrame(route_data)
     role_df = pd.DataFrame(role_data)
     sg_df = pd.DataFrame(sg_data).drop_duplicates("SecurityGroupId", ignore_index=True)
+    iam_df = pd.DataFrame(credential_data)
 
     ec2_df = pd.DataFrame(ec2_data)
     rds_df = pd.DataFrame(rds_data)
@@ -99,6 +101,7 @@ def scan_services(profile, region):
             startcol=0,
             index=False,
         )
+        iam_df.to_excel(writer, sheet_name="IAM Credentials", index=False)
         ec2_df.to_excel(writer, sheet_name="EC2 Resources", index=False)
         rds_df.to_excel(writer, sheet_name="RDS Resources", index=False)
         s3_df.to_excel(writer, sheet_name="S3 Resources", index=False)
