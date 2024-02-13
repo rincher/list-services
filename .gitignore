@@ -2,3 +2,4 @@
 /__pycache__
 /aws_resource_ap-northeast-2_default.xlsx
 /aws_resource_ap-northeast-2_seoulauctionblue.xlsx
+/test.py

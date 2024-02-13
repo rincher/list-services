@@ -1,5 +1,6 @@
-def fetch_and_format_route53_data(client):
+def fetch_and_format_route53_data(session):
     # Get Host Zones
+    client = session.client("route53")
     hosted_zones = client.list_hosted_zones().get("HostedZones")
     zone_info = []
     continent_code = [

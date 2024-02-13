@@ -13,38 +13,40 @@ from role_resources import fetch_and_format_role_data
 from sg_resources import fetch_and_format_sg_data
 from sg_rules import fetch_and_format_sg_rules
 from route53_resources import fetch_and_format_route53_data
+from lb_resources import fetch_and_format_lb_data
 from iam_credential_report import retrieve_credential_report
-
 
 # from lb_resources import fetch_and_format_lb_data
 import pandas as pd
 
 
 def scan_services(profile, region):
-    services = ["ec2", "s3", "rds", "cloudfront", "route53"]
+    services = ["ec2", "s3", "rds", "cloudfront"]
     session = boto3.Session(profile_name=profile, region_name=region)
 
-    # Default Data (VPC, Subnet, NGW, IGW, VPN, VPC Peering, DX)
+    # TODO Add More Default Data
+    # Default Data (VPC, Subnet, Route53, VPN)
     # VPC
-    vpc_data = fetch_and_format_vpc_data(session, region)
-    # Subnet
-    subnet_data = fetch_and_format_subnet_data(session)
-    # Nat
-    nat_data = fetch_and_format_nat_data(session)
-    # VPN
-    vpn_data = fetch_and_format_vpn_data(session)
-    # RouteTable
-    route_data = fetch_and_format_route_data(session)
-    # IAM Role
-    role_data = fetch_and_format_role_data(session)
-    # Security Group
-    sg_data = fetch_and_format_sg_data(session)
-    sg_rule_data = fetch_and_format_sg_rules(session)
+    # vpc_data = fetch_and_format_vpc_data(session, region)
+    # # Subnet
+    # subnet_data = fetch_and_format_subnet_data(session)
+    # # Nat
+    # nat_data = fetch_and_format_nat_data(session)
+    # # VPN
+    # vpn_data = fetch_and_format_vpn_data(session)
+    # # RouteTable
+    # route_data = fetch_and_format_route_data(session)
+    # # IAM Role
+    # role_data = fetch_and_format_role_data(session)
+    # # Security Group
+    # sg_data = fetch_and_format_sg_data(session)
+    # sg_rule_data = fetch_and_format_sg_rules(session)
+
+    route53_data = fetch_and_format_route53_data(session)
+    lb_data = fetch_and_format_lb_data(session, route53_data)
 
     # IAM Credential Report
     credential_data = retrieve_credential_report(session)
-
-    # lb_data = fetch_and_format_lb_data(session)
 
     for service_name in services:
         client = session.client(service_name)
@@ -57,8 +59,6 @@ def scan_services(profile, region):
             s3_data = fetch_and_format_s3_data(client)
         elif service_name == "cloudfront":
             cf_data = fetch_and_format_cf_data(client)
-        elif service_name == "route53":
-            route53_data = fetch_and_format_route53_data(client)
 
     vpc_df = pd.DataFrame(vpc_data)
     subnet_df = pd.DataFrame(subnet_data)
@@ -77,8 +77,11 @@ def scan_services(profile, region):
     route53_df = pd.DataFrame(route53_data)
 
     with pd.ExcelWriter(
-        "aws_resource_" + region + "_" + profile + ".xlsx", engine="openpyxl", mode="w"
+        "aws_resource_" + region + "_" + profile + ".xlsx",
+        engine="xslxwriter",
+        mode="w",
     ) as writer:
+        writer.book.formats[0].set_text_wrap()
         vpc_df.to_excel(
             writer, sheet_name="Network", startrow=0, startcol=0, index=False
         )
@@ -106,7 +109,7 @@ def scan_services(profile, region):
         iam_df.to_excel(writer, sheet_name="IAM Credentials", index=False)
         ec2_df.to_excel(writer, sheet_name="EC2 Resources", index=False)
         rds_df.to_excel(writer, sheet_name="RDS Resources", index=False)
-        s3_df.to_excel(writer, sheet_name="S3 Resources", index=False)
+        s3_df.to_excel(writer, sheet_name="S3 Resources", index=False, escapechar=None)
         # lb_df.to_excel(writer, sheet_name="Load Balancers", index=False)
         cf_df.to_excel(writer, sheet_name="CloudFront Resources", index=False)
         route_df.to_excel(writer, sheet_name="Route Table", index=False)
