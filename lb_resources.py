@@ -1,3 +1,6 @@
+import re
+
+
 def fetch_and_format_lb_data(session, route53_data):
     lb_client = session.client("elbv2")
     lb_response = lb_client.describe_load_balancers()
@@ -13,7 +16,11 @@ def fetch_and_format_lb_data(session, route53_data):
         lb_type = lbs.get("Type")
 
         records = fetch_lb_record(route53_data, lb_dns)
-        lb_records = ", ".join(records)
+        lb_records = "\n".join(records)
+
+        pattern = r"\\(\d{3})"
+
+        modified_lb_records = re.sub(pattern, replace, lb_records)
 
         lb_az = []
         for az in lbs.get("AvailabilityZones"):
@@ -26,18 +33,23 @@ def fetch_and_format_lb_data(session, route53_data):
         lb_data["Resource Name"] = lb_name
         lb_data["용도"] = lb_scheme
         lb_data["ELB Domain"] = lb_dns
-        lb_data["Service Domain"] = lb_records
+        lb_data["Service Domain"] = modified_lb_records
         lb_data["Regions"] = "ap-northeast-2"
         lb_data["Vpc"] = lb_vpc
         lb_data["AZ"] = "\n".join(lb_az)
 
-        print(lb_data.get("AZ"))
         # Describe Target Group
-        tg_response = lb_client.describe_target_groups()
+        tg_response = lb_client.describe_target_groups(LoadBalancerArn=lb_arn)
+        target_group_list = []
         for target_group in tg_response.get("TargetGroups"):
             target_arn = target_group.get("TargetGroupArn")
             target_name = target_group.get("TargetGroupName")
             target_vpc = target_group.get("VpcId")
+            target_group_list.append(target_name)
+
+        lb_data["Target Name"] = "\n".join(target_group_list)
+        lb_data_set.append(lb_data)
+    return lb_data_set
 
 
 def fetch_lb_record(route53_data, lb_dns):
@@ -51,3 +63,10 @@ def fetch_lb_record(route53_data, lb_dns):
                 records_list.append(route53_info.get("Record Name").rsplit(".", 1)[0])
 
     return records_list
+
+
+def replace(match):
+    octal_value = int(match.group(1), 8)
+    special_character = chr(octal_value)
+
+    return special_character

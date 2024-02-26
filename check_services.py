@@ -15,9 +15,10 @@ from sg_rules import fetch_and_format_sg_rules
 from route53_resources import fetch_and_format_route53_data
 from lb_resources import fetch_and_format_lb_data
 from iam_credential_report import retrieve_credential_report
+from styleframe import StyleFrame, Styler, utils
+import pandas as pd
 
 # from lb_resources import fetch_and_format_lb_data
-import pandas as pd
 
 
 def scan_services(profile, region):
@@ -27,20 +28,20 @@ def scan_services(profile, region):
     # TODO Add More Default Data
     # Default Data (VPC, Subnet, Route53, VPN)
     # VPC
-    # vpc_data = fetch_and_format_vpc_data(session, region)
-    # # Subnet
-    # subnet_data = fetch_and_format_subnet_data(session)
-    # # Nat
-    # nat_data = fetch_and_format_nat_data(session)
-    # # VPN
-    # vpn_data = fetch_and_format_vpn_data(session)
-    # # RouteTable
-    # route_data = fetch_and_format_route_data(session)
-    # # IAM Role
-    # role_data = fetch_and_format_role_data(session)
-    # # Security Group
-    # sg_data = fetch_and_format_sg_data(session)
-    # sg_rule_data = fetch_and_format_sg_rules(session)
+    vpc_data = fetch_and_format_vpc_data(session, region)
+    # Subnet
+    subnet_data = fetch_and_format_subnet_data(session)
+    # Nat
+    nat_data = fetch_and_format_nat_data(session)
+    # VPN
+    vpn_data = fetch_and_format_vpn_data(session)
+    # RouteTable
+    route_data = fetch_and_format_route_data(session)
+    # IAM Role
+    role_data = fetch_and_format_role_data(session)
+    # Security Group
+    sg_data = fetch_and_format_sg_data(session)
+    sg_rule_data = fetch_and_format_sg_rules(session)
 
     route53_data = fetch_and_format_route53_data(session)
     lb_data = fetch_and_format_lb_data(session, route53_data)
@@ -64,7 +65,7 @@ def scan_services(profile, region):
     subnet_df = pd.DataFrame(subnet_data)
     nat_df = pd.DataFrame(nat_data)
     vpn_df = pd.DataFrame(vpn_data)
-    # lb_df = pd.DataFrame(lb_data)
+    lb_df = pd.DataFrame(lb_data)
     route_df = pd.DataFrame(route_data)
     role_df = pd.DataFrame(role_data)
     sg_df = pd.DataFrame(sg_data).drop_duplicates("SecurityGroupId", ignore_index=True)
@@ -78,10 +79,10 @@ def scan_services(profile, region):
 
     with pd.ExcelWriter(
         "aws_resource_" + region + "_" + profile + ".xlsx",
-        engine="xslxwriter",
+        engine="xlsxwriter",
         mode="w",
     ) as writer:
-        writer.book.formats[0].set_text_wrap()
+        # writer.book.formats[0].set_text_wrap()
         vpc_df.to_excel(
             writer, sheet_name="Network", startrow=0, startcol=0, index=False
         )
@@ -109,8 +110,8 @@ def scan_services(profile, region):
         iam_df.to_excel(writer, sheet_name="IAM Credentials", index=False)
         ec2_df.to_excel(writer, sheet_name="EC2 Resources", index=False)
         rds_df.to_excel(writer, sheet_name="RDS Resources", index=False)
-        s3_df.to_excel(writer, sheet_name="S3 Resources", index=False, escapechar=None)
-        # lb_df.to_excel(writer, sheet_name="Load Balancers", index=False)
+        s3_df.to_excel(writer, sheet_name="S3 Resources", index=False)
+        lb_df.to_excel(writer, sheet_name="Load Balancers", index=False)
         cf_df.to_excel(writer, sheet_name="CloudFront Resources", index=False)
         route_df.to_excel(writer, sheet_name="Route Table", index=False)
         role_df.to_excel(writer, sheet_name="Role Statement", index=False)
@@ -121,8 +122,7 @@ def scan_services(profile, region):
 
 selected_profile = get_profile()
 
-# region = input("input region: ")
+region = input("input region: ")
 region = "ap-northeast-2"
-
 
 scan_services(selected_profile, region)
