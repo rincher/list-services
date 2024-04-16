@@ -1,7 +1,5 @@
 from datetime import datetime, timezone
 
-# TODO Convert days to months and days
-
 
 def fetch_and_format_role_data(session):
     iam_client = session.client("iam")
@@ -32,7 +30,7 @@ def fetch_and_format_role_data(session):
                 "LastUsedDate"
             )
             last_used_days = str(last_used.days)
-        except Exception as e:
+        except Exception:
             continue
 
         role_max_session = role_response.get("Role").get("MaxSessionDuration")

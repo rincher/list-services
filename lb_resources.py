@@ -42,9 +42,7 @@ def fetch_and_format_lb_data(session, route53_data):
         tg_response = lb_client.describe_target_groups(LoadBalancerArn=lb_arn)
         target_group_list = []
         for target_group in tg_response.get("TargetGroups"):
-            target_arn = target_group.get("TargetGroupArn")
             target_name = target_group.get("TargetGroupName")
-            target_vpc = target_group.get("VpcId")
             target_group_list.append(target_name)
 
         lb_data["Target Name"] = "\n".join(target_group_list)

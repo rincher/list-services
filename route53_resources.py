@@ -61,7 +61,9 @@ def fetch_and_format_route53_data(session):
             record_ttl = record.get("TTL", 0)
 
             # if record is an alias: Yes
-            if record_ttl == 0:
+            if record_ttl == 0 and (
+                record.get("Type") == "A" or record.get("Type") == "AAAA"
+            ):
                 record_alias = "Yes"
             else:
                 record_alias = "No"

@@ -4,7 +4,6 @@ from datetime import datetime, timezone
 
 def retrieve_credential_report(session):
     iam_client = session.client("iam")
-    response = iam_client.generate_credential_report()
     while True:
         report_state = iam_client.generate_credential_report(State="Generating")
 
@@ -69,17 +68,21 @@ def retrieve_credential_report(session):
             or int(access_key2_age) > 90
         ):
             credential_data["User"] = user
+            # check MFA Enabled
             credential_data["MFA enabled"] = mfa_enabled
+            # check password enable
             credential_data["Password enabled"] = password_enabled
             if password_enabled == "false" and password_age == 0:
                 credential_data["Password last changed"] = "N/A"
             else:
                 credential_data["Password last changed"] = str(password_age)
+            # check accesskey1 last_rotated_date
             credential_data["Access key1 active"] = access_key1_enabled
             if access_key1_enabled == "false" and access_key1_age == 0:
                 credential_data["Access key1 last changed"] = "N/A"
             else:
                 credential_data["Access key1 last changed"] = str(access_key1_age)
+            # check accesskey2 last_rotated_date
             credential_data["Access key2 active"] = access_key2_enabled
             if access_key2_enabled == "false" and access_key2_age == 0:
                 credential_data["Access key2 last changed"] = "N/A"

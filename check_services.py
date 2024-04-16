@@ -18,8 +18,6 @@ from iam_credential_report import retrieve_credential_report
 from styleframe import StyleFrame, Styler, utils
 import pandas as pd
 
-# from lb_resources import fetch_and_format_lb_data
-
 
 def scan_services(profile, region):
     services = ["ec2", "s3", "rds", "cloudfront"]
@@ -122,7 +120,7 @@ def scan_services(profile, region):
 
 selected_profile = get_profile()
 
-region = input("input region: ")
-region = "ap-northeast-2"
+region = input("input region: ") or "ap-northeast-2"
+# region = "ap-northeast-2"
 
 scan_services(selected_profile, region)
