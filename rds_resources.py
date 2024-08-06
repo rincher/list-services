@@ -12,6 +12,7 @@ def fetch_and_format_rds_data(client):
         db_status = db_instance.get("DBInstanceStatus", "")
         db_storage_type = db_instance.get("StorageType", "")
         db_storage = db_instance.get("AllocatedStorage", "")
+        db_autominor = db_instance.get("AutoMinorVersionUpgrade", "")
         db_maintenance = db_instance.get("PreferredMaintenanceWindow", "")
         db_instance_pg = db_instance.get("DBParameterGroups")[0].get(
             "DBParameterGroupName"
@@ -41,6 +42,7 @@ def fetch_and_format_rds_data(client):
         db_data["Status"] = db_status
         db_data["StorageType"] = db_storage_type
         db_data["Storage"] = db_storage
+        db_data["AutoMinorVersionUpgrade"] = db_autominor
         db_data["MaintenanceEnable"] = db_maintenance
         db_data["DBInstancePG"] = db_instance_pg
         db_data["DBSubnetGroup"] = db_subnet_group

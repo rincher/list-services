@@ -1,3 +1,6 @@
+import os
+from queue import Queue
+
 import boto3
 from import_profile import get_profile
 from ec2_resources import fetch_and_format_ec2_data
@@ -15,70 +18,90 @@ from sg_rules import fetch_and_format_sg_rules
 from route53_resources import fetch_and_format_route53_data
 from lb_resources import fetch_and_format_lb_data
 from iam_credential_report import retrieve_credential_report
-from styleframe import StyleFrame, Styler, utils
 import pandas as pd
+import threading
 
 
 def scan_services(profile, region):
     services = ["ec2", "s3", "rds", "cloudfront"]
     session = boto3.Session(profile_name=profile, region_name=region)
 
-    # TODO Add More Default Data
-    # Default Data (VPC, Subnet, Route53, VPN)
-    # VPC
-    vpc_data = fetch_and_format_vpc_data(session, region)
-    # Subnet
-    subnet_data = fetch_and_format_subnet_data(session)
-    # Nat
-    nat_data = fetch_and_format_nat_data(session)
-    # VPN
-    vpn_data = fetch_and_format_vpn_data(session)
-    # RouteTable
-    route_data = fetch_and_format_route_data(session)
-    # IAM Role
-    role_data = fetch_and_format_role_data(session)
-    # Security Group
-    sg_data = fetch_and_format_sg_data(session)
-    sg_rule_data = fetch_and_format_sg_rules(session)
+    result_queue = Queue()
 
-    route53_data = fetch_and_format_route53_data(session)
-    lb_data = fetch_and_format_lb_data(session, route53_data)
+    def thread_function(queue, func, *args):
+        result = func(*args)
+        queue.put((func.__name__, result))
 
-    # IAM Credential Report
-    credential_data = retrieve_credential_report(session)
+    # Define threads for each function call
+    threads = [
+        threading.Thread(target=thread_function, args=(result_queue, fetch_and_format_vpc_data, session, region)),
+        threading.Thread(target=thread_function, args=(result_queue, fetch_and_format_subnet_data, session)),
+        threading.Thread(target=thread_function, args=(result_queue, fetch_and_format_nat_data, session)),
+        threading.Thread(target=thread_function, args=(result_queue, fetch_and_format_vpn_data, session)),
+        threading.Thread(target=thread_function, args=(result_queue, fetch_and_format_route_data, session)),
+        threading.Thread(target=thread_function, args=(result_queue, fetch_and_format_role_data, session)),
+        threading.Thread(target=thread_function, args=(result_queue, fetch_and_format_sg_data, session)),
+        threading.Thread(target=thread_function, args=(result_queue, fetch_and_format_sg_rules, session)),
+        threading.Thread(target=thread_function, args=(result_queue, fetch_and_format_route53_data, session)),
+        threading.Thread(target=thread_function, args=(result_queue, retrieve_credential_report, session))
+    ]
 
+    # Add service-specific threads
     for service_name in services:
         client = session.client(service_name)
-
         if service_name == "ec2":
-            ec2_data = fetch_and_format_ec2_data(client)
+            threads.append(
+                threading.Thread(target=thread_function, args=(result_queue, fetch_and_format_ec2_data, client)))
         elif service_name == "rds":
-            rds_data = fetch_and_format_rds_data(client)
+            threads.append(
+                threading.Thread(target=thread_function, args=(result_queue, fetch_and_format_rds_data, client)))
         elif service_name == "s3":
-            s3_data = fetch_and_format_s3_data(client)
+            threads.append(
+                threading.Thread(target=thread_function, args=(result_queue, fetch_and_format_s3_data, client)))
         elif service_name == "cloudfront":
-            cf_data = fetch_and_format_cf_data(client)
+            threads.append(
+                threading.Thread(target=thread_function, args=(result_queue, fetch_and_format_cf_data, client)))
 
-    vpc_df = pd.DataFrame(vpc_data)
-    subnet_df = pd.DataFrame(subnet_data)
-    nat_df = pd.DataFrame(nat_data)
-    vpn_df = pd.DataFrame(vpn_data)
+    # Start all threads
+    for thread in threads:
+        thread.start()
+
+    # Wait for all threads to complete
+    for thread in threads:
+        thread.join()
+
+    # Collect results
+    results = {}
+    while not result_queue.empty():
+        func_name, result = result_queue.get()
+        results[func_name] = result
+
+    lb_data = fetch_and_format_lb_data(session, results['fetch_and_format_route53_data'])
+    # Prepare DataFrames
+    vpc_df = pd.DataFrame(results['fetch_and_format_vpc_data'])
+    subnet_df = pd.DataFrame(results['fetch_and_format_subnet_data'])
+    nat_df = pd.DataFrame(results['fetch_and_format_nat_data'])
+    vpn_df = pd.DataFrame(results['fetch_and_format_vpn_data'])
     lb_df = pd.DataFrame(lb_data)
-    route_df = pd.DataFrame(route_data)
-    role_df = pd.DataFrame(role_data)
-    sg_df = pd.DataFrame(sg_data).drop_duplicates("SecurityGroupId", ignore_index=True)
-    iam_df = pd.DataFrame(credential_data)
-    sg_rule_df = pd.DataFrame(sg_rule_data)
-    ec2_df = pd.DataFrame(ec2_data)
-    rds_df = pd.DataFrame(rds_data)
-    s3_df = pd.DataFrame(s3_data)
-    cf_df = pd.DataFrame(cf_data)
-    route53_df = pd.DataFrame(route53_data)
+    route_df = pd.DataFrame(results['fetch_and_format_route_data'])
+    role_df = pd.DataFrame(results['fetch_and_format_role_data'])
+    sg_df = pd.DataFrame(results['fetch_and_format_sg_data']).drop_duplicates("SecurityGroupId", ignore_index=True)
+    iam_df = pd.DataFrame(results['retrieve_credential_report'])
+    sg_rule_df = pd.DataFrame(results['fetch_and_format_sg_rules'])
+    ec2_df = pd.DataFrame(results['fetch_and_format_ec2_data'])
+    rds_df = pd.DataFrame(results['fetch_and_format_rds_data'])
+    s3_df = pd.DataFrame(results['fetch_and_format_s3_data'])
+    cf_df = pd.DataFrame(results['fetch_and_format_cf_data'])
+    route53_df = pd.DataFrame(results['fetch_and_format_route53_data'])
+
+    filename = "aws_resource_" + region + "_" + profile + ".xlsx"
+    if os.path.exists(filename):
+        os.remove(filename)
 
     with pd.ExcelWriter(
-        "aws_resource_" + region + "_" + profile + ".xlsx",
-        engine="xlsxwriter",
-        mode="w",
+            filename,
+            engine="xlsxwriter",
+            mode="w",
     ) as writer:
         # writer.book.formats[0].set_text_wrap()
         vpc_df.to_excel(

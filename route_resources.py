@@ -33,10 +33,11 @@ def fetch_and_format_route_data(session):
                         for tag in subnet.get("Tags"):
                             if tag.get("Key") == "Name":
                                 subnet_name = tag.get("Value")
+
             except Exception as e:
                 continue
 
-            route_data["Name"] = "".join(subnet_name)
+            route_data["Subnet Name"] = "".join(subnet_name)
             route_data["Subnet ID"] = subnet_id
             route_data["State"] = subnet_state
             route_data["VPC"] = route_vpc
@@ -45,7 +46,7 @@ def fetch_and_format_route_data(session):
             route_data["Available IPv4 Address"] = subnet_ip_count
             route_data["Availability Zone"] = subnet_az
             route_data["Availability Zone Id"] = subnet_az_id
-            route_data["Route Table"] = route_table_id + route_name
+            route_data["Route Table"] = f"{route_table_id} {route_name}"
             route_data_set.append(route_data)
 
     return route_data_set
